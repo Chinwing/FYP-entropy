@@ -29,9 +29,9 @@ class PhaseManager:
 
         self.last_pos = None
         self.current_pos = None
-        self.spawn_crossed_once = False
+        self.spawn_crossed = False
         self.lap_in_progress = False
-        self.phase0_gui_launched = False
+        self.p0_gui_launched = False
 
         self.start_x = 4.55
         self.spawn_x = 4.63
@@ -130,10 +130,10 @@ class PhaseManager:
                 self.entropy_triggered = True
                 self.entropy_trigger_pub.publish(1.0)
         
-        if self.phase == 0 and not self.phase0_gui_launched:
+        if self.phase == 0 and not self.p0_gui_launched:
             phase0_path = os.path.join(self.gui_path, "trial.py")
             threading.Thread(target=lambda: os.system(f"python3 {phase0_path}")).start()
-            self.phase0_gui_launched = True
+            self.p0_gui_launched = True
 
         if self.lap_in_progress and self.in_spawn_zone(self.current_pos) and self.phase == 0 and self.lap_start_time and (rospy.Time.now() - self.lap_start_time).to_sec() > 10.0:
             self.lap_count += 1
@@ -149,7 +149,7 @@ class PhaseManager:
                 self.phase = 0.5
                 self.joy_pressed = False
                 self.lap_count = 0
-                self.spawn_crossed_once = False
+                self.spawn_crossed = False
 
         if self.phase == 0.5 and self.joy_pressed:
             self.y_pressed_phase1 = True

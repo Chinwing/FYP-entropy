@@ -16,6 +16,7 @@ git clone https://github.com/Chinwing/Turtlebot3_FYP.git
 ```
 move them into a file in src of your catkin_ws, 
 run cakin_make to build the workspace
+filepaths may need to be ammended
 
 ## Dependencies:
 A Ubuntu machine (version 20.4) and a working ROS noetic environment is neeeded to run the code. To install all the dependencies go to the top directory of catkin_ws and run

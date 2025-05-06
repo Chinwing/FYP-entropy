@@ -7,6 +7,7 @@ from datetime import datetime
 from queue import Queue, Empty
 import threading
 
+# This script is the GUI for Phase 0 of the project.
 class Phase0GUI:
     def __init__(self):
         self.root = Tk()

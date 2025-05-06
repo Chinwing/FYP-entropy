@@ -6,6 +6,7 @@ from tkinter import Tk, Label
 from queue import Queue, Empty
 import threading
 
+# This script creates a GUI for Phase 1 of the experiment, displaying a countdown timer
 class Phase2GUI:
     def __init__(self):
         self.root = Tk()

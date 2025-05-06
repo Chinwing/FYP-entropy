@@ -12,6 +12,9 @@ from sensor_msgs.msg import Joy
 from nav_msgs.msg import Odometry
 from datetime import datetime
 
+# This script manages the phases of the experiment, including counting laps, triggering entropy calculations,
+# and launching GUI windows for each phase.
+# It handles the transition between phases based on user input and robot position.
 class PhaseManager:
     def __init__(self):
         self.prev_joy_button_state = 0
@@ -90,6 +93,7 @@ class PhaseManager:
                 rospy.loginfo(f"Y button ignored in phase {self.phase}")
         self.prev_joy_button_state = current_state
 
+    # This check if the robot has crossed the starting line
     def crossed_line(self, x_thresh, y_range):
         if self.last_pos is None or self.current_pos is None:
             return False
@@ -99,8 +103,9 @@ class PhaseManager:
         
         return (y_min <= curr_y <= y_max and 
                 last_x > x_thresh and curr_x <= x_thresh and 
-                last_x > curr_x)  
+                last_x > curr_x)
 
+    # This check if the robot has crossed the finishing line
     def crossed_spawn_line(self):
         if self.last_pos is None or self.current_pos is None:
             return False
@@ -110,17 +115,20 @@ class PhaseManager:
         
         return (y_min <= curr_y <= y_max and 
                 last_x > self.spawn_x and curr_x <= self.spawn_x and 
-                last_x > curr_x)  
+                last_x > curr_x)
 
+    # This check if the robot is in the spawning zone
     def in_spawn_zone(self, pos, tol=0.3):
         return abs(pos[0] - self.spawn_x) <= tol and self.y_range[0] <= pos[1] <= self.y_range[1]
 
+    # This function is called when the robot's odometry data is received to track turtlebot's position
     def odom_callback(self, data):
         x = data.pose.pose.position.x
         y = data.pose.pose.position.y
         self.last_pos = self.current_pos
         self.current_pos = (x, y)
 
+     # This function is called to check if the robot has crossed the starting line
         if self.crossed_line(self.start_x, self.y_range) and self.phase == 0:
             self.lap_start_time = rospy.Time.now()
             self.lap_in_progress = True
@@ -129,12 +137,14 @@ class PhaseManager:
             if self.lap_count == 1:
                 self.entropy_triggered = True
                 self.entropy_trigger_pub.publish(1.0)
-        
+
+        # This function is called to see if the GUI for phase 0 has been launched
         if self.phase == 0 and not self.p0_gui_launched:
             phase0_path = os.path.join(self.gui_path, "trial.py")
             threading.Thread(target=lambda: os.system(f"python3 {phase0_path}")).start()
             self.p0_gui_launched = True
 
+        # this function is called to check if the robot have completed the lap and show the time taken
         if self.lap_in_progress and self.in_spawn_zone(self.current_pos) and self.phase == 0 and self.lap_start_time and (rospy.Time.now() - self.lap_start_time).to_sec() > 10.0:
             self.lap_count += 1
             elapsed = (rospy.Time.now() - self.lap_start_time).to_sec()
@@ -151,11 +161,13 @@ class PhaseManager:
                 self.lap_count = 0
                 self.spawn_crossed = False
 
+        # Check if the Y button has been pressed to start the next phase
         if self.phase == 0.5 and self.joy_pressed:
             self.y_pressed_phase1 = True
             self.joy_pressed = False
             rospy.loginfo("Y button pressed. Please cross the start line to begin Phase 1.")
 
+        # Check if the robot has crossed the start line to begin Phase 1
         if self.phase == 0.5 and self.y_pressed_phase1 and self.crossed_line(self.start_x, self.y_range):
             self.phase = 1
             self.phase_pub.publish(self.phase)
@@ -227,6 +239,7 @@ class PhaseManager:
             rospy.loginfo("Phase 3 ended.")
             self.timer_start = None
 
+    # This function is called to check the timer and update the phase if time is up
     def check_timer(self, event):
         if self.timer_start and int(self.phase) in [1, 2, 3]:
             elapsed = (rospy.Time.now() - self.timer_start).to_sec()
@@ -241,6 +254,7 @@ class PhaseManager:
                 self.entropy_trigger_pub.publish(0.0)
                 self.timer_start = None
 
+    # These functions are called to log the entropy data
     def entropy_callback(self, msg):
         self.entropy_total = msg.data
 
@@ -280,6 +294,7 @@ class PhaseManager:
             ])
             self.csv_files[int(self.phase)].flush()
 
+    # Shutdown function to close all the GUI applications and clean up
     def shutdown(self):
         for f in self.csv_files.values():
             f.close()

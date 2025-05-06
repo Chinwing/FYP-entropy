@@ -11,6 +11,7 @@ import random
 import csv
 import os
 
+# This script implements a GUI for a reaction test in Phase 3 of a project.
 class Phase3GUI:
     def __init__(self):
         self.root = Tk()
@@ -25,6 +26,7 @@ class Phase3GUI:
         self.closed = False
         self.queue = Queue()
 
+        # Create a label to display buttons
         for i in range(4):
             btn = Button(self.root, text=f"Button {i+1}", font=("Helvetica", 18), width=15,
                         bg="paleturquoise1")
@@ -46,6 +48,7 @@ class Phase3GUI:
             "a", 
             newline=''
         )
+        # Log the reaction times and correctness in a CSV file
         self.csv_writer = csv.writer(self.reaction_log)
         self.csv_writer.writerow(["timestamp", "target_button", "clicked_button", "reaction_time", "correct"])
 
@@ -58,6 +61,7 @@ class Phase3GUI:
         
         self.schedule_next_flash()
 
+    # Highlight the selected button and reset the others
     def highlight_selected(self):
         for i, btn in enumerate(self.buttons):
             if i == self.selected_index:
@@ -67,6 +71,7 @@ class Phase3GUI:
                 if i == self.target_button:
                     btn.config(bg="purple")
 
+    # This function is called when the joystick is moved
     def joy_callback(self, msg):
         if self.closed:
             return
@@ -84,11 +89,13 @@ class Phase3GUI:
         if msg.buttons[3] == 1: 
             self.button_clicked(self.selected_index)
 
+    # Make the buttons flash randomly between 5 to 10 seconds
     def schedule_next_flash(self):
         if not self.closed:
             delay = random.randint(5, 10) * 1000
             self.root.after(delay, self.flash_random_button)
 
+    # Flash a random button and record the time
     def flash_random_button(self):
         if self.closed:
             return
@@ -99,6 +106,7 @@ class Phase3GUI:
         self.buttons[self.target_button].config(bg="purple")
         self.start_time = time.time()
 
+    #Provide Feedback to the user after clicking a button
     def button_clicked(self, idx):
         if self.target_button is None or self.closed:
             return
@@ -120,6 +128,7 @@ class Phase3GUI:
             self.buttons[idx].config(bg="red")
             self.root.after(500, self.reset_after_incorrect)
 
+    # Reset the button color after an incorrect click
     def reset_after_incorrect(self):
         if self.closed:
             return
@@ -127,6 +136,7 @@ class Phase3GUI:
             self.buttons[self.target_button].config(bg="purple")
         self.highlight_selected()
 
+    # Update the timer to show remaining time
     def timer_callback(self, msg):
         if self.closed:
             return

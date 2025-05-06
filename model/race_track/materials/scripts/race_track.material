@@ -1,0 +1,14 @@
+material race_track/IMG_0349
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture track.png
+      }
+    }
+  }
+}
+

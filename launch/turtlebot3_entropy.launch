@@ -1,0 +1,75 @@
+<launch>
+    
+    <arg name="model" default="burger" />
+    <env name="TURTLEBOT3_MODEL" value="$(arg model)" />
+
+    
+    <arg name="world_path" default="$(find behaviour_detection_package)/worlds/Track.world" />
+
+    
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_path)" />
+        <arg name="paused" value="false" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="gui" value="true" />
+    </include>
+
+    
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro'" />
+
+    
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
+        <param name="publish_frequency" type="double" value="50.0" />
+    </node>
+
+    <param name="spawn_delay" value="3.0" />
+
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" output="screen" 
+    args="-param robot_description -urdf -model turtlebot3_burger -x 4.57 -y -3.37 -z 0.1 -Y 3.14"
+    launch-prefix="bash -c 'sleep 3; $0 $@'" />
+
+    <node name="entropy_calc_node" pkg="behaviour_detection_package" type="entropy_calc_node.py" output="screen" />
+    <node name="estimation_error_node" pkg="behaviour_detection_package" type="estimation_error_node.py" output="screen" />
+    <node pkg="behaviour_detection_package" type="phase_manager.py" name="phase_manager" output="screen" />
+
+
+    
+    <node pkg="joy" type="joy_node" name="joy_node">
+        <param name="dev" value="/dev/input/js0" />
+        <param name="deadzone" value="0.1" />
+        <param name="autorepeat_rate" value="20" />
+    </node>
+
+    <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy">
+        <param name="enable_button" value="0" />  
+        <param name="axis_linear" value="1" />    
+        <param name="axis_angular" value="0" />   
+        <param name="scale_linear" value="0.3" />
+        <param name="scale_angular" value="0.4" />
+        <remap from="cmd_vel" to="/cmd_vel" />
+    </node>
+
+    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find behaviour_detection_package)/config/entropy_display.rviz" />
+
+
+    
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find behaviour_detection_package)/maps/Track.yaml" output="screen" />
+
+    <include file="$(find turtlebot3_navigation)/launch/amcl.launch" />
+    <node pkg="rostopic" type="rostopic" name="set_initial_pose" args="pub -1 /initialpose geometry_msgs/PoseWithCovarianceStamped &quot;{
+          header: {frame_id: 'map'},
+          pose: {
+              pose: {
+                  position: {x: 7, y: -3, z: 0.0},
+                  orientation: {z: 1.0, w: 0.0}
+              },
+              covariance: [0.25, 0, 0, 0, 0, 0,
+                          0, 0.25, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0.068]
+          }}&quot;" />
+
+</launch>

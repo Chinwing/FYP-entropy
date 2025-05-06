@@ -1,0 +1,50 @@
+<launch>
+    
+    <arg name="model" default="burger" />
+    <env name="TURTLEBOT3_MODEL" value="$(arg model)" />
+
+    
+    <arg name="world_path" default="$(find behaviour_detection_package)/worlds/Track.world" />
+
+    
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_path)" />
+        <arg name="paused" value="false" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="gui" value="true" />
+    </include>
+
+    
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro'" />
+
+
+
+    <param name="spawn_delay" value="3.0" />
+
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" output="screen" 
+    args="-param robot_description -urdf -model turtlebot3_burger -x 4.57 -y -3.37 -z 0.1 -Y 3.14"
+    launch-prefix="bash -c 'sleep 3; $0 $@'" />
+    
+    <node pkg="joy" type="joy_node" name="joy_node">
+        <param name="dev" value="/dev/input/js0" />
+        <param name="deadzone" value="0.1" />
+        <param name="autorepeat_rate" value="20" />
+    </node>
+
+    <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy">
+        <param name="enable_button" value="0" />  
+        <param name="axis_linear" value="1" />    
+        <param name="axis_angular" value="0" />   
+        <param name="scale_linear" value="0.15" />
+        <param name="scale_angular" value="0.3" />
+        <remap from="cmd_vel" to="/cmd_vel" />
+    </node>
+
+    <!-- Launch SLAM -->
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch">
+        <arg name="slam_methods" value="gmapping"/>
+    </include>
+
+</launch>
+
+
